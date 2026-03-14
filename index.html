@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>FitTrack</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiRml0VHJhY2siLCJzaG9ydF9uYW1lIjoiRml0VHJhY2siLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFhMWExZSIsInRoZW1lX2NvbG9yIjoiIzFhMWExZSJ9">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg-primary:#1a1a1e;--bg-secondary:#242428;--bg-card:#2c2c31;--bg-input:#353539;--bg-hover:#3a3a3f;--teal:#2dd4bf;--teal-dim:#1a9e8f;--teal-glow:rgba(45,212,191,0.15);--text-primary:#e8e8f0;--text-secondary:#9a9ab8;--text-muted:#6b6b88;--danger:#f87171;--warning:#fbbf24;--success:#34d399;--blue:#60a5fa;--purple:#a78bfa;--orange:#fb923c;--radius:12px;--radius-sm:8px;--shadow:0 4px 24px rgba(0,0,0,0.3);--font:'Segoe UI',system-ui,-apple-system,sans-serif;--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;font-family:var(--font);background:var(--bg-primary);color:var(--text-primary);overflow:hidden;-webkit-font-smoothing:antialiased}
+input,select,textarea,button{font-family:var(--font)}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:500px;margin:0 auto;position:relative;overflow:hidden}
+.header{padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));background:var(--bg-secondary);border-bottom:1px solid rgba(45,212,191,0.1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10}
+.header h1{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--teal),#5eead4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px}
+/* Date nav */
+.date-nav{display:flex;align-items:center;gap:6px}
+.date-nav-btn{width:30px;height:30px;border-radius:50%;background:var(--bg-input);border:none;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.date-nav-btn:active{background:var(--teal);color:#0f172a}
+.date-label{font-size:13px;color:var(--text-secondary);cursor:pointer;text-align:center;min-width:90px;padding:4px 8px;border-radius:var(--radius-sm);transition:background 0.2s}
+.date-label:active{background:var(--bg-input)}
+.date-label .dl-day{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px}
+.date-today-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-left:4px;vertical-align:middle}
+
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;padding-bottom:80px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{width:3px}.content::-webkit-scrollbar-track{background:transparent}.content::-webkit-scrollbar-thumb{background:var(--teal-dim);border-radius:3px}
+.nav{position:absolute;bottom:0;left:0;right:0;background:var(--bg-secondary);border-top:1px solid rgba(45,212,191,0.1);display:flex;justify-content:space-around;align-items:center;padding:8px 0;padding-bottom:max(8px,var(--safe-bottom));z-index:100;flex-shrink:0}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.2s;background:none;border:none;color:var(--text-muted);font-size:10px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase}
+.nav-item svg{width:22px;height:22px;transition:all 0.2s}.nav-item.active{color:var(--teal)}.nav-item.active svg{filter:drop-shadow(0 0 6px rgba(45,212,191,0.4))}
+.card{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:var(--shadow)}
+.card-title{font-size:14px;font-weight:700;color:var(--teal);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;gap:8px}
+.input-group{margin-bottom:10px}.input-group label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.input-row{display:flex;gap:8px}.input-row .input-group{flex:1}
+input[type="text"],input[type="number"],input[type="date"],input[type="time"],select,textarea{width:100%;padding:10px 12px;background:var(--bg-input);color:var(--text-primary);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius-sm);font-size:15px;outline:none;transition:border-color 0.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-glow)}
+textarea{resize:vertical;min-height:60px}
+input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(0.5)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px}
+.btn-primary{background:linear-gradient(135deg,var(--teal-dim),var(--teal));color:#0f172a;box-shadow:0 2px 12px rgba(45,212,191,0.25)}.btn-primary:active{transform:scale(0.97)}
+.btn-secondary{background:var(--bg-input);color:var(--text-primary)}.btn-danger{background:rgba(248,113,113,0.15);color:var(--danger)}
+.btn-sm{padding:6px 12px;font-size:12px}.btn-block{width:100%}
+.tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--bg-secondary);border-radius:var(--radius-sm);padding:3px;overflow-x:auto}
+.tab{flex:1;padding:8px 6px;text-align:center;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;transition:all 0.2s;border:none;background:transparent;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap}
+.tab.active{background:var(--teal);color:#0f172a}
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}.stats-row.three{grid-template-columns:repeat(3,1fr)}
+.stat-box{background:var(--bg-card);border-radius:var(--radius-sm);padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.04)}
+.stat-value{font-size:24px;font-weight:800;letter-spacing:-0.5px}.stat-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid rgba(255,255,255,0.03)}
+.log-entry-info{flex:1}.log-entry-main{font-size:14px;font-weight:600}.log-entry-sub{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.log-entry-actions{display:flex;gap:4px}
+.delete-btn,.edit-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.delete-btn{background:rgba(248,113,113,0.1);color:var(--danger)}.edit-btn{background:rgba(45,212,191,0.1);color:var(--teal)}
+.chart-wrap{position:relative;height:220px;margin:8px 0}.chart-wrap canvas{width:100%!important;height:100%!important}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.photo-item{aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg-input);position:relative;cursor:pointer}
+.photo-item img{width:100%;height:100%;object-fit:cover}
+.photo-item .photo-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.8));padding:16px 6px 4px;font-size:10px;color:white;text-align:center}
+.photo-item .photo-delete{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:var(--danger);border:none;cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
+.photo-item:hover .photo-delete,.photo-item:active .photo-delete{display:flex}
+.photo-weight{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);color:var(--teal);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;flex-direction:column}
+.lightbox.show{display:flex}.lightbox img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}
+.lightbox-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;font-size:24px;cursor:pointer}
+.lightbox-info{color:var(--text-secondary);margin-top:12px;font-size:13px}
+.exercise-block{background:var(--bg-secondary);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;border-left:3px solid var(--teal)}
+.exercise-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.exercise-name{font-size:15px;font-weight:700}
+.set-row{display:flex;gap:8px;align-items:center;font-size:13px;padding:4px 0;color:var(--text-secondary)}
+.set-row span{min-width:30px}.set-row .set-num{color:var(--teal);font-weight:700}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-secondary);border-radius:20px 20px 0 0;padding:24px 20px;padding-bottom:max(24px,var(--safe-bottom));width:100%;max-width:500px;max-height:85vh;overflow-y:auto;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px;text-align:center;color:var(--teal)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-muted)}.empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:0.3}.empty-state p{font-size:14px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.section-title{font-size:22px;font-weight:800;letter-spacing:-0.3px}
+.divider{height:1px;background:rgba(255,255,255,0.05);margin:14px 0}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}.badge-teal{background:var(--teal-glow);color:var(--teal)}
+.hidden{display:none!important}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}
+.text-center{text-align:center}.text-secondary{color:var(--text-secondary)}.text-sm{font-size:13px}
+.range-picker{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.range-btn{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:0.3px}
+.range-btn.active{background:var(--teal);color:#0f172a;border-color:var(--teal)}
+.macro-bar-wrap{margin-bottom:6px}.macro-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.macro-bar{height:6px;background:var(--bg-input);border-radius:3px;overflow:hidden}.macro-bar-fill{height:100%;border-radius:3px;transition:width 0.4s ease}
+.day-templates{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.day-template-btn{padding:14px 12px;background:var(--bg-card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);cursor:pointer;transition:all 0.2s;text-align:left}
+.day-template-btn:active{border-color:var(--teal);background:var(--teal-glow)}
+.day-template-btn .dt-name{font-size:15px;font-weight:800;color:var(--teal);margin-bottom:2px}
+.day-template-btn .dt-info{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.preset-btn{padding:10px;background:var(--bg-input);border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:all 0.2s;text-align:left}
+.preset-btn:active{border-color:var(--teal);background:var(--teal-glow)}
+.preset-btn .pb-name{font-size:13px;font-weight:700;color:var(--text-primary)}.preset-btn .pb-info{font-size:11px;color:var(--text-muted);margin-top:2px}
+.set-input-block{display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:8px 10px;background:var(--bg-input);border-radius:var(--radius-sm)}
+.set-input-block .sib-num{color:var(--teal);font-weight:800;font-size:14px;min-width:28px}
+.set-input-block input{width:70px;padding:6px 8px;font-size:14px;background:var(--bg-primary);border:1px solid rgba(255,255,255,0.06);border-radius:6px;color:var(--text-primary);text-align:center}
+.set-input-block .sib-x{color:var(--text-muted);font-weight:700}
+.schedule-today{padding:10px 14px;background:var(--teal-glow);border:1px solid rgba(45,212,191,0.2);border-radius:var(--radius-sm);margin-bottom:14px}
+.schedule-today .st-label{font-size:11px;color:var(--teal);text-transform:uppercase;font-weight:700;letter-spacing:0.5px}
+.schedule-today .st-value{font-size:15px;font-weight:700}
+.ex-save-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:0.3px;background:var(--teal-dim);color:#0f172a;transition:all 0.2s}
+.ex-save-btn:active{transform:scale(0.95)}.ex-save-btn.saved{background:var(--success);pointer-events:none}.ex-block-saved{opacity:0.5}
+.scan-area{text-align:center;padding:12px;background:var(--bg-input);border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid rgba(255,255,255,0.04)}
+.scan-btns{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+.scan-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid rgba(45,212,191,0.3);color:var(--teal);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.scan-btn:active{background:var(--teal-glow)}.scan-btn svg{width:16px;height:16px}
+.scan-status{font-size:12px;color:var(--text-muted);margin-top:6px}
+#barcodeReader{width:100%;margin:8px 0;border-radius:8px;overflow:hidden}
+#barcodeReader video{border-radius:8px}
+.food-results{max-height:220px;overflow-y:auto;margin-top:8px}
+.food-result-item{display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-card);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);transition:all 0.2s}
+.food-result-item:active{border-color:var(--teal);background:var(--teal-glow)}
+.fr-name{font-size:13px;font-weight:700;flex:1}.fr-brand{font-size:11px;color:var(--text-muted)}
+.fr-macros{font-size:11px;color:var(--text-secondary);text-align:right;white-space:nowrap}
+.amount-adjust{display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg-card);border-radius:var(--radius-sm);margin:8px 0}
+.amount-adjust label{font-size:12px;color:var(--text-secondary);font-weight:600;white-space:nowrap}
+.amount-adjust input{width:80px;padding:6px 8px;font-size:14px;background:var(--bg-primary);border:1px solid rgba(255,255,255,0.06);border-radius:6px;color:var(--text-primary);text-align:center}
+.amount-adjust .aa-per{font-size:11px;color:var(--text-muted)}
+.meal-detail-food{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg-input);border-radius:var(--radius-sm);margin-bottom:5px}
+.meal-detail-food .mdf-left{flex:1}.meal-detail-food .mdf-name{font-size:14px;font-weight:700}.meal-detail-food .mdf-amount{font-size:12px;color:var(--text-muted)}
+.meal-detail-food .mdf-right{text-align:right}.meal-detail-food .mdf-cal{font-size:13px;font-weight:700;color:var(--teal)}.meal-detail-food .mdf-macros{font-size:11px;color:var(--text-muted)}
+.meal-detail-totals{display:flex;justify-content:space-around;padding:12px;background:var(--teal-glow);border-radius:var(--radius-sm);margin:12px 0}
+.meal-detail-totals .mdt-item{text-align:center}.meal-detail-totals .mdt-val{font-size:18px;font-weight:800}.meal-detail-totals .mdt-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px}
+/* Cardio entry */
+.cardio-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-sm);margin-bottom:6px;border-left:3px solid var(--purple)}
+.cardio-entry .ce-info{flex:1}.cardio-entry .ce-main{font-size:14px;font-weight:600}.cardio-entry .ce-sub{font-size:12px;color:var(--text-secondary);margin-top:2px}
+/* GDrive */
+.gdrive-status{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:10px}
+.gdrive-status.connected{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.gdrive-status.disconnected{background:var(--bg-input);border:1px solid rgba(255,255,255,0.04)}
+.gdrive-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.gdrive-dot.on{background:var(--success)}.gdrive-dot.off{background:var(--text-muted)}
+.gdrive-info{flex:1;font-size:12px}.gdrive-info strong{font-size:13px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h1>FitTrack</h1>
+      <button class="date-nav-btn" onclick="openSettingsModal()" style="width:28px;height:28px;font-size:14px" title="Settings">⚙</button>
+    </div>
+    <div class="date-nav">
+      <button class="date-nav-btn" onclick="shiftDate(-1)">‹</button>
+      <div class="date-label" onclick="openDatePicker()">
+        <div id="headerDateMain"></div>
+        <div class="dl-day" id="headerDateDay"></div>
+      </div>
+      <button class="date-nav-btn" onclick="shiftDate(1)">›</button>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+  <div class="nav">
+    <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+    <button class="nav-item" data-page="nutrition" onclick="navigate('nutrition')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Nutrition</button>
+    <button class="nav-item" data-page="workout" onclick="navigate('workout')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 10h1.5v4H3a1 1 0 01-1-1v-2a1 1 0 011-1z"/><path d="M5.5 8h1v8h-1a1 1 0 01-1-1V9a1 1 0 011-1z"/><path d="M17.5 8h1a1 1 0 011 1v6a1 1 0 01-1 1h-1V8z"/><path d="M19.5 10H21a1 1 0 011 1v2a1 1 0 01-1 1h-1.5v-4z"/><rect x="7.5" y="6" width="9" height="12" rx="1"/></svg>Workout</button>
+    <button class="nav-item" data-page="weight" onclick="navigate('weight')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a4 4 0 00-4 4v2h8V6a4 4 0 00-4-4z"/><rect x="2" y="8" width="20" height="14" rx="2"/><path d="M12 14v3"/></svg>Weight</button>
+    <button class="nav-item" data-page="photos" onclick="navigate('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Photos</button>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()"><button class="lightbox-close" onclick="closeLightbox()">&times;</button><img id="lightboxImg" src="" alt=""><div class="lightbox-info" id="lightboxInfo"></div></div>
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)"><div class="modal" id="modalContent"></div></div>
+<input type="hidden" id="hiddenDatePicker">
+<script>
+const DB={get(k,f){try{const v=localStorage.getItem('ft_'+k);return v?JSON.parse(v):(f!==undefined?f:[]);}catch{return f!==undefined?f:[];}},set(k,v){localStorage.setItem('ft_'+k,JSON.stringify(v));},id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}};
+const realToday=()=>new Date().toISOString().slice(0,10);
+const fmtDate=d=>{const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});};
+const fmtDateShort=d=>{const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});};
+
+let viewDate=realToday();
+let currentPage='dashboard',chartInstances={};
+
+function getViewDow(){return new Date(viewDate+'T12:00:00').getDay();}
+
+// ═══ DATE NAV ═══
+function shiftDate(delta){
+  const d=new Date(viewDate+'T12:00:00');d.setDate(d.getDate()+delta);
+  viewDate=d.toISOString().slice(0,10);
+  updateHeader();destroyCharts();render();
+}
+function openDatePicker(){
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">Go to Date</div>
+    <div class="input-group"><label>Select Date</label><input type="date" id="jumpDate" value="${viewDate}"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-secondary btn-block" onclick="viewDate=realToday();updateHeader();destroyCharts();render();closeModal()">Today</button>
+      <button class="btn btn-primary btn-block" onclick="viewDate=document.getElementById('jumpDate').value;updateHeader();destroyCharts();render();closeModal()">Go</button>
+    </div>`;
+  showModal();
+}
+function updateHeader(){
+  const dt=new Date(viewDate+'T12:00:00');
+  const isToday=viewDate===realToday();
+  document.getElementById('headerDateMain').innerHTML=dt.toLocaleDateString('de-DE',{day:'numeric',month:'short'})+(isToday?'<span class="date-today-dot"></span>':'');
+  document.getElementById('headerDateDay').textContent=isToday?'Today':dt.toLocaleDateString('de-DE',{weekday:'long'});
+}
+
+// ═══ PLAN PRESETS ═══
+const MEAL_PRESETS=[
+  {name:'Pre-Workout',calories:208,protein:1,carbs:52,fat:0,foods:[{item:'Maltodextrin',amount:'50g',cal:190,p:0,c:48,f:0},{item:'Rice Cake',amount:'1 pc',cal:18,p:1,c:4,f:0}]},
+  {name:'Post-Workout',calories:557,protein:38,carbs:60,fat:15,foods:[{item:'Potatoes',amount:'350g',cal:280,p:7,c:60,f:0},{item:'Salmon',amount:'125g',cal:232,p:28,c:0,f:13},{item:'Spinach',amount:'225g',cal:45,p:3,c:0,f:2}]},
+  {name:'Lunch',calories:616,protein:88,carbs:48,fat:11,foods:[{item:'Lean Beef',amount:'320g',cal:512,p:86,c:0,f:10},{item:'Potatoes',amount:'350g',cal:280,p:7,c:60,f:0},{item:'Zero BBQ Sauce',amount:'15g',cal:4,p:0,c:1,f:0}]},
+  {name:'Dinner',calories:632,protein:45,carbs:9,fat:39,foods:[{item:'Eggs',amount:'6 large',cal:468,p:36,c:3,f:33},{item:'Red Bell Pepper',amount:'1 pc',cal:40,p:1,c:6,f:0},{item:'Beef Liver',amount:'50g',cal:75,p:10,c:2,f:2}]},
+  {name:'Snack (Nougat)',calories:220,protein:3,carbs:25,fat:10,foods:[{item:'Nougat',amount:'40g',cal:220,p:3,c:25,f:10}]},
+];
+const WEEKLY_SCHEDULE={1:{label:'Monday',session:'Push',cardio:'1.5h Rucking (PM)'},2:{label:'Tuesday',session:'Pull',cardio:'1.5h Rucking (PM)'},3:{label:'Wednesday',session:'Legs',cardio:'1.5h Rucking (PM)'},4:{label:'Thursday',session:'Rest',cardio:'Walking / Light Vest'},5:{label:'Friday',session:'Upper',cardio:'1.5h Rucking (PM)'},6:{label:'Saturday',session:'Lower',cardio:'1.5h Rucking (PM)'},0:{label:'Sunday',session:'Rest',cardio:'Walking / Light Vest'}};
+const DAY_TEMPLATES={
+  Push:{time:'~1h',exercises:[{name:'Flat Press Machine',sets:3,reps:'6-9'},{name:'Incline Press Machine',sets:2,reps:'6-9'},{name:'Shoulder Press',sets:3,reps:'6-9'},{name:'Lateral Raises',sets:3,reps:'6-9'},{name:'Triceps Pushdowns',sets:3,reps:'7-10'}]},
+  Pull:{time:'~1h',exercises:[{name:'Lat Pulldown',sets:3,reps:'6-9'},{name:'Narrow Row',sets:3,reps:'6-9'},{name:'Wide Row',sets:3,reps:'6-9'},{name:'Bicep Curls',sets:2,reps:'7-10'},{name:'Hammer Curls',sets:2,reps:'7-10'}]},
+  Legs:{time:'~1h',exercises:[{name:'Leg Extension',sets:3,reps:'6-9'},{name:'Stiff Legged Deadlift',sets:3,reps:'6-9'},{name:'Leg Curls',sets:2,reps:'7-10'},{name:'Leg Press',sets:2,reps:'7-10'},{name:'Calf Raises',sets:3,reps:'6-9'}]},
+  Upper:{time:'~1.5h',exercises:[{name:'Flat Press Machine',sets:3,reps:'6-9'},{name:'Incline Press',sets:2,reps:'6-9'},{name:'Lat Pulldown',sets:3,reps:'6-9'},{name:'Wide Row',sets:3,reps:'6-9'},{name:'Shoulder Press',sets:3,reps:'6-9'},{name:'Triceps Pushdown',sets:3,reps:'7-10'},{name:'Bicep Curls',sets:3,reps:'7-10'}]},
+  Lower:{time:'~1.5h',exercises:[{name:'Calf Raises',sets:3,reps:'6-9'},{name:'Leg Extensions',sets:3,reps:'6-9'},{name:'Stiff Legged Deadlift',sets:3,reps:'6-9'},{name:'Lateral Raises',sets:3,reps:'6-9'},{name:'Narrow Row',sets:3,reps:'6-9'},{name:'Leg Press',sets:2,reps:'7-10'},{name:'Leg Curls',sets:2,reps:'7-10'}]},
+};
+const ALL_EXERCISES=[...new Set(Object.values(DAY_TEMPLATES).flatMap(t=>t.exercises.map(e=>e.name)))].sort();
+const DEFAULT_TARGETS={calories:2014,protein:172,carbs:181,fat:65};
+const CARDIO_TYPES=['Rucking','Walking','Incline Walking','Light Vest Walking','Cycling','Other'];
+
+// ═══ NAV & RENDER ═══
+function navigate(page){currentPage=page;document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));destroyCharts();render();}
+function destroyCharts(){Object.values(chartInstances).forEach(c=>c.destroy());chartInstances={};}
+function render(){
+  const el=document.getElementById('content');
+  switch(currentPage){
+    case 'dashboard':el.innerHTML=renderDashboard();initDashboardCharts();break;
+    case 'nutrition':el.innerHTML=renderNutrition();initNutritionCharts();break;
+    case 'workout':el.innerHTML=renderWorkout();initWorkoutCharts();break;
+    case 'weight':el.innerHTML=renderWeight();initWeightCharts();break;
+    case 'photos':el.innerHTML=renderPhotos();break;
+  }
+  el.scrollTop=0;
+}
+function getViewSchedule(){return WEEKLY_SCHEDULE[getViewDow()];}
+
+// ═══ DASHBOARD ═══
+function renderDashboard(){
+  const targets=DB.get('targets',DEFAULT_TARGETS);
+  const meals=DB.get('nutrition').filter(n=>n.date===viewDate);
+  const t=meals.reduce((a,m)=>({cal:a.cal+(m.calories||0),p:a.p+(m.protein||0),c:a.c+(m.carbs||0),f:a.f+(m.fat||0)}),{cal:0,p:0,c:0,f:0});
+  const weights=DB.get('weight');const lastW=weights.length?weights[weights.length-1]:null;const firstW=weights.length?weights[0]:null;
+  const diff=(lastW&&firstW&&weights.length>1)?(lastW.kg-firstW.kg).toFixed(1):null;
+  const workouts=DB.get('workouts');const dayW=workouts.filter(w=>w.date===viewDate);
+  const cardio=DB.get('cardio').filter(c=>c.date===viewDate);
+  const ws=new Date(viewDate+'T12:00:00');ws.setDate(ws.getDate()-ws.getDay()+1);
+  const weekWorkouts=[...new Set(workouts.filter(w=>w.date>=ws.toISOString().slice(0,10)&&w.date<new Date(ws.getTime()+7*86400000).toISOString().slice(0,10)).map(w=>w.date))].length;
+  const sched=getViewSchedule();
+  let dayExHtml='';
+  if(dayW.length){const em={};dayW.forEach(w=>{if(!em[w.exercise])em[w.exercise]=[];em[w.exercise].push(...w.sets);});dayExHtml=Object.entries(em).map(([n,sets])=>`<div class="exercise-block"><div class="exercise-name">${n}</div>${sets.map((s,i)=>`<div class="set-row"><span class="set-num">#${i+1}</span><span>${s.weight}kg × ${s.reps}</span></div>`).join('')}</div>`).join('');}
+  const cardioHtml=cardio.length?cardio.map(c=>`<div class="cardio-entry"><div class="ce-info"><div class="ce-main">${c.type}</div><div class="ce-sub">${c.duration} min${c.note?' · '+c.note:''}</div></div></div>`).join(''):'';
+  return `
+    <div class="section-header"><div class="section-title">Dashboard</div></div>
+    <div class="schedule-today"><div><div class="st-label">${sched.label}</div><div class="st-value">${sched.session}${sched.session!=='Rest'?' Day':''} — ${sched.cardio}</div></div></div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-value" style="color:var(--teal)">${t.cal}</div><div class="stat-label">kcal / ${targets.calories}</div><div style="margin-top:6px"><div class="macro-bar"><div class="macro-bar-fill" style="width:${Math.min(100,t.cal/targets.calories*100)}%;background:var(--teal)"></div></div></div></div>
+      <div class="stat-box"><div class="stat-value" style="color:var(--blue)">${lastW?lastW.kg:'—'}</div><div class="stat-label">kg ${diff!==null?'('+((diff>0?'+':'')+diff)+')':''}</div></div>
+    </div>
+    <div class="stats-row three">
+      <div class="stat-box"><div class="stat-value" style="color:var(--danger);font-size:20px">${t.p}g</div><div class="stat-label">Protein</div></div>
+      <div class="stat-box"><div class="stat-value" style="color:var(--warning);font-size:20px">${t.c}g</div><div class="stat-label">Carbs</div></div>
+      <div class="stat-box"><div class="stat-value" style="color:var(--orange);font-size:20px">${t.f}g</div><div class="stat-label">Fat</div></div>
+    </div>
+    <div class="card"><div class="card-title">Weight Trend (30d)</div><div class="chart-wrap"><canvas id="dashWeightChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Calorie Trend (14d)</div><div class="chart-wrap"><canvas id="dashCalChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Workouts this week: ${weekWorkouts} / 5</div>${dayExHtml||'<div class="text-secondary text-sm text-center" style="padding:12px">No workout logged</div>'}${cardioHtml}</div>
+  `;
+}
+function initDashboardCharts(){
+  const weights=DB.get('weight');const d30=new Date();d30.setDate(d30.getDate()-30);const recent=weights.filter(w=>w.date>=d30.toISOString().slice(0,10));
+  if(recent.length>1)chartInstances.dashW=makeLineChart('dashWeightChart',recent.map(w=>w.date),recent.map(w=>w.kg),'kg','#60a5fa',true);
+  const nutrition=DB.get('nutrition');const d14=new Date();d14.setDate(d14.getDate()-14);const dm={};
+  nutrition.filter(n=>n.date>=d14.toISOString().slice(0,10)).forEach(n=>{dm[n.date]=(dm[n.date]||0)+(n.calories||0);});
+  const dates=Object.keys(dm).sort();const targets=DB.get('targets',DEFAULT_TARGETS);
+  if(dates.length>=1)chartInstances.dashC=makeBarChart('dashCalChart',dates,dates.map(d=>dm[d]),'kcal','#2dd4bf',targets.calories);
+}
+
+// ═══ NUTRITION ═══
+function renderNutrition(){
+  const targets=DB.get('targets',DEFAULT_TARGETS);const allMeals=DB.get('nutrition');
+  const dayMeals=allMeals.filter(n=>n.date===viewDate);
+  const t=dayMeals.reduce((a,m)=>({cal:a.cal+(m.calories||0),p:a.p+(m.protein||0),c:a.c+(m.carbs||0),f:a.f+(m.fat||0)}),{cal:0,p:0,c:0,f:0});
+  const macros=[{label:'Calories',val:t.cal,target:targets.calories,unit:'kcal',color:'var(--teal)'},{label:'Protein',val:t.p,target:targets.protein,unit:'g',color:'var(--danger)'},{label:'Carbs',val:t.c,target:targets.carbs,unit:'g',color:'var(--warning)'},{label:'Fat',val:t.f,target:targets.fat,unit:'g',color:'var(--orange)'}];
+  const loggedNames=new Set(dayMeals.map(m=>m.name));
+  return `
+    <div class="section-header"><div class="section-title">Nutrition</div><button class="btn btn-primary btn-sm" onclick="openNutritionModal()">+ Log</button></div>
+    <div class="card"><div class="card-title">Quick Log — Meal Presets</div>
+      <div class="preset-grid">${MEAL_PRESETS.map((p,i)=>`<div class="preset-btn" onclick="quickLogMeal(${i})" style="${loggedNames.has(p.name)?'opacity:0.4':''}"><div class="pb-name">${loggedNames.has(p.name)?'✓ ':''}${p.name}</div><div class="pb-info">${p.calories} kcal · ${p.protein}g P</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${p.foods.map(f=>f.item).join(', ')}</div></div>`).join('')}</div>
+      <div class="text-center"><button class="btn btn-secondary btn-sm" onclick="quickLogAllMeals()">Log All Meals</button></div>
+    </div>
+    <div class="card"><div class="card-title">Macros</div>
+      ${macros.map(m=>`<div class="macro-bar-wrap"><div class="macro-bar-label"><span style="color:${m.color};font-weight:700">${m.label}</span><span>${m.val} / ${m.target} ${m.unit}</span></div><div class="macro-bar"><div class="macro-bar-fill" style="width:${Math.min(100,m.val/m.target*100)}%;background:${m.color}"></div></div></div>`).join('')}
+      <div class="mt-8 text-center"><button class="btn btn-secondary btn-sm" onclick="openTargetsModal()">Edit Targets</button></div>
+    </div>
+    <div class="card"><div class="card-title">Log</div>
+      ${dayMeals.length?dayMeals.map(m=>`<div class="log-entry"><div class="log-entry-info"><div class="log-entry-main">${m.name}</div><div class="log-entry-sub">${m.calories}kcal · P${m.protein}g · C${m.carbs}g · F${m.fat}g</div></div><div class="log-entry-actions"><button class="edit-btn" onclick="editNutrition('${m.id}')">✎</button><button class="delete-btn" onclick="deleteNutrition('${m.id}')">&times;</button></div></div>`).join(''):'<div class="empty-state"><p>No meals logged</p></div>'}
+    </div>
+    <div class="card"><div class="card-title">Calorie Trend</div>
+      <div class="range-picker" id="nutRangePicker"><button class="range-btn active" onclick="setNutRange(7,this)">7d</button><button class="range-btn" onclick="setNutRange(14,this)">14d</button><button class="range-btn" onclick="setNutRange(30,this)">30d</button><button class="range-btn" onclick="setNutRange(90,this)">90d</button></div>
+      <div class="chart-wrap"><canvas id="nutCalChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Protein Trend</div><div class="chart-wrap"><canvas id="nutProteinChart"></canvas></div></div>
+  `;
+}
+function quickLogMeal(idx){
+  const p=MEAL_PRESETS[idx];
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${p.name}</div>
+    ${p.foods.map(f=>`<div class="meal-detail-food"><div class="mdf-left"><div class="mdf-name">${f.item}</div><div class="mdf-amount">${f.amount}</div></div><div class="mdf-right"><div class="mdf-cal">${f.cal} kcal</div><div class="mdf-macros">P${f.p}g · C${f.c}g · F${f.f}g</div></div></div>`).join('')}
+    <div class="meal-detail-totals"><div class="mdt-item"><div class="mdt-val" style="color:var(--teal)">${p.calories}</div><div class="mdt-label">kcal</div></div><div class="mdt-item"><div class="mdt-val" style="color:var(--danger)">${p.protein}g</div><div class="mdt-label">Protein</div></div><div class="mdt-item"><div class="mdt-val" style="color:var(--warning)">${p.carbs}g</div><div class="mdt-label">Carbs</div></div><div class="mdt-item"><div class="mdt-val" style="color:var(--orange)">${p.fat}g</div><div class="mdt-label">Fat</div></div></div>
+    <button class="btn btn-primary btn-block" onclick="confirmLogMeal(${idx})">Log This Meal</button>
+    <button class="btn btn-secondary btn-block mt-8" onclick="closeModal()" style="font-size:12px">Cancel</button>`;showModal();
+}
+function confirmLogMeal(idx){const p=MEAL_PRESETS[idx];const meals=DB.get('nutrition');meals.push({id:DB.id(),name:p.name,calories:p.calories,protein:p.protein,carbs:p.carbs,fat:p.fat,date:viewDate});DB.set('nutrition',meals);closeModal();render();}
+function quickLogAllMeals(){const meals=DB.get('nutrition');const tn=new Set(meals.filter(m=>m.date===viewDate).map(m=>m.name));MEAL_PRESETS.forEach(p=>{if(!tn.has(p.name))meals.push({id:DB.id(),name:p.name,calories:p.calories,protein:p.protein,carbs:p.carbs,fat:p.fat,date:viewDate});});DB.set('nutrition',meals);render();}
+let nutRangeDays=7;
+function setNutRange(days,btn){nutRangeDays=days;document.querySelectorAll('#nutRangePicker .range-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');destroyCharts();initNutritionCharts();}
+function initNutritionCharts(){
+  const allMeals=DB.get('nutrition');const cutoff=new Date();cutoff.setDate(cutoff.getDate()-nutRangeDays);const cutStr=cutoff.toISOString().slice(0,10);
+  const dd={};allMeals.filter(m=>m.date>=cutStr).forEach(m=>{if(!dd[m.date])dd[m.date]={cal:0,p:0};dd[m.date].cal+=m.calories||0;dd[m.date].p+=m.protein||0;});
+  const dates=Object.keys(dd).sort();const targets=DB.get('targets',DEFAULT_TARGETS);
+  if(dates.length>=1){chartInstances.nutCal=makeBarChart('nutCalChart',dates,dates.map(d=>dd[d].cal),'kcal','#2dd4bf',targets.calories);chartInstances.nutProt=makeLineChart('nutProteinChart',dates,dates.map(d=>dd[d].p),'Protein (g)','#f87171',true,targets.protein);}
+}
+function openNutritionModal(editId){
+  const existing=editId?DB.get('nutrition').find(m=>m.id===editId):null;
+  const userPresets=DB.get('mealPresets',[]);
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${existing?'Edit':'Log'} Meal</div>
+    ${!existing?`<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block">Plan Presets</label>
+      <div class="preset-grid">${MEAL_PRESETS.map((p,i)=>`<div class="preset-btn" onclick="applyMealPreset(${i})"><div class="pb-name">${p.name}</div><div class="pb-info">${p.calories}kcal · P${p.protein}g</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${p.foods.map(f=>f.item).join(', ')}</div></div>`).join('')}</div></div>
+    ${userPresets.length?`<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block">Custom Presets</label><div style="display:flex;gap:6px;flex-wrap:wrap">${userPresets.map(p=>`<button class="btn btn-secondary btn-sm" onclick="applyUserPreset('${p.id}')">${p.name}</button>`).join('')}</div></div>`:''}
+    <div id="scanArea" class="scan-area" style="margin-bottom:12px">
+      <div class="scan-btns">
+        <button class="scan-btn" onclick="startBarcodeScanner()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/></svg>Scan Barcode</button>
+        <button class="scan-btn" onclick="toggleFoodSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search Food</button>
+      </div>
+      <div id="barcodeReader"></div>
+      <div id="foodSearchArea" class="hidden">
+        <div style="display:flex;gap:6px"><input type="text" id="foodSearchInput" placeholder="e.g. Hähnchenbrust, Skyr, Reis..." style="flex:1;font-size:14px"><button class="btn btn-primary btn-sm" onclick="searchFood()">Go</button></div>
+        <div id="foodResults" class="food-results"></div>
+      </div>
+      <div id="scanStatus" class="scan-status"></div>
+    </div>`:''}
+    <div class="divider"></div>
+    <div class="input-group"><label>Meal / Food Name</label><input type="text" id="mealName" value="${existing?existing.name:''}" placeholder="e.g. Chicken & Rice"></div>
+    <div class="input-row"><div class="input-group"><label>Calories</label><input type="number" id="mealCal" value="${existing?existing.calories:''}" placeholder="kcal"></div><div class="input-group"><label>Protein (g)</label><input type="number" id="mealP" value="${existing?existing.protein:''}" placeholder="g"></div></div>
+    <div class="input-row"><div class="input-group"><label>Carbs (g)</label><input type="number" id="mealC" value="${existing?existing.carbs:''}" placeholder="g"></div><div class="input-group"><label>Fat (g)</label><input type="number" id="mealF" value="${existing?existing.fat:''}" placeholder="g"></div></div>
+    <div class="input-group"><label>Date</label><input type="date" id="mealDate" value="${existing?existing.date:viewDate}"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary btn-block" onclick="saveNutrition('${editId||''}')">${existing?'Update':'Save'}</button>
+      ${!existing?`<button class="btn btn-secondary btn-sm" onclick="saveAsPreset()" style="white-space:nowrap">★ Preset</button>`:''}
+    </div>`;showModal();
+}
+function editNutrition(id){openNutritionModal(id);}
+function applyMealPreset(i){const p=MEAL_PRESETS[i];document.getElementById('mealName').value=p.name;document.getElementById('mealCal').value=p.calories;document.getElementById('mealP').value=p.protein;document.getElementById('mealC').value=p.carbs;document.getElementById('mealF').value=p.fat;}
+function applyUserPreset(id){const p=DB.get('mealPresets',[]).find(x=>x.id===id);if(!p)return;document.getElementById('mealName').value=p.name;document.getElementById('mealCal').value=p.calories;document.getElementById('mealP').value=p.protein;document.getElementById('mealC').value=p.carbs;document.getElementById('mealF').value=p.fat;}
+function saveNutrition(editId){
+  const name=document.getElementById('mealName').value.trim();if(!name)return;
+  const entry={id:editId||DB.id(),name,calories:+document.getElementById('mealCal').value||0,protein:+document.getElementById('mealP').value||0,carbs:+document.getElementById('mealC').value||0,fat:+document.getElementById('mealF').value||0,date:document.getElementById('mealDate').value||viewDate};
+  let meals=DB.get('nutrition');
+  if(editId){meals=meals.map(m=>m.id===editId?entry:m);}else{meals.push(entry);}
+  DB.set('nutrition',meals);closeModal();render();
+}
+function saveAsPreset(){const name=document.getElementById('mealName').value.trim();if(!name)return;const presets=DB.get('mealPresets',[]);presets.push({id:DB.id(),name,calories:+document.getElementById('mealCal').value||0,protein:+document.getElementById('mealP').value||0,carbs:+document.getElementById('mealC').value||0,fat:+document.getElementById('mealF').value||0});DB.set('mealPresets',presets);alert('Preset saved: '+name);}
+function deleteNutrition(id){DB.set('nutrition',DB.get('nutrition').filter(m=>m.id!==id));render();}
+function openTargetsModal(){const t=DB.get('targets',DEFAULT_TARGETS);document.getElementById('modalContent').innerHTML=`<div class="modal-title">Daily Targets</div><div class="input-group"><label>Calories (kcal)</label><input type="number" id="tCal" value="${t.calories}"></div><div class="input-group"><label>Protein (g)</label><input type="number" id="tP" value="${t.protein}"></div><div class="input-group"><label>Carbs (g)</label><input type="number" id="tC" value="${t.carbs}"></div><div class="input-group"><label>Fat (g)</label><input type="number" id="tF" value="${t.fat}"></div><button class="btn btn-primary btn-block mt-12" onclick="saveTargets()">Save Targets</button>`;showModal();}
+function saveTargets(){DB.set('targets',{calories:+document.getElementById('tCal').value||2014,protein:+document.getElementById('tP').value||172,carbs:+document.getElementById('tC').value||181,fat:+document.getElementById('tF').value||65});closeModal();render();}
+
+// ═══ WORKOUT ═══
+function renderWorkout(){
+  const workouts=DB.get('workouts');const dayW=workouts.filter(w=>w.date===viewDate);
+  const cardio=DB.get('cardio').filter(c=>c.date===viewDate);
+  const sched=getViewSchedule();const allLogged=[...new Set(workouts.map(w=>w.exercise))].sort();
+  const exMap={};dayW.forEach(w=>{if(!exMap[w.exercise])exMap[w.exercise]={sets:[],ids:[]};exMap[w.exercise].sets.push(...w.sets);exMap[w.exercise].ids.push(w.id);});
+  return `
+    <div class="section-header"><div class="section-title">Workout</div><button class="btn btn-primary btn-sm" onclick="openSingleExerciseModal()">+ Exercise</button></div>
+    <div class="schedule-today"><div><div class="st-label">${sched.label}'s Plan</div><div class="st-value">${sched.session}${sched.session!=='Rest'?' Day':''}</div></div></div>
+    <div class="card"><div class="card-title">Day Templates</div>
+      <div class="day-templates">${Object.entries(DAY_TEMPLATES).map(([name,tmpl])=>`<div class="day-template-btn" onclick="openDayTemplate('${name}')"><div class="dt-name">${name}</div><div class="dt-info">${tmpl.exercises.length} exercises · ${tmpl.time}</div></div>`).join('')}</div></div>
+    <div class="card"><div class="card-title">Resistance</div>
+      ${Object.keys(exMap).length?Object.entries(exMap).map(([name,d])=>`<div class="exercise-block"><div class="exercise-header"><div class="exercise-name">${name}</div><div class="log-entry-actions"><button class="edit-btn" onclick="editWorkoutExercise('${d.ids[0]}')">✎</button><button class="delete-btn" onclick="deleteWorkoutEntries('${d.ids.join(',')}')">&times;</button></div></div>${d.sets.map((s,i)=>`<div class="set-row"><span class="set-num">#${i+1}</span><span>${s.weight} kg × ${s.reps} reps</span></div>`).join('')}</div>`).join(''):'<div class="empty-state"><p>No exercises logged</p></div>'}
+    </div>
+    <div class="card"><div class="card-title" style="color:var(--purple)">Cardio</div>
+      <div style="margin-bottom:10px"><button class="btn btn-secondary btn-sm" onclick="openCardioModal()">+ Log Cardio</button></div>
+      ${cardio.length?cardio.map(c=>`<div class="cardio-entry"><div class="ce-info"><div class="ce-main">${c.type}</div><div class="ce-sub">${c.duration} min${c.vestKg?' · Vest: '+c.vestKg+'kg':''}${c.note?' · '+c.note:''}</div></div><div class="log-entry-actions"><button class="edit-btn" onclick="editCardio('${c.id}')">✎</button><button class="delete-btn" onclick="deleteCardio('${c.id}')">&times;</button></div></div>`).join(''):'<div class="text-secondary text-sm text-center" style="padding:8px">No cardio logged</div>'}
+    </div>
+    ${allLogged.length?`<div class="card"><div class="card-title">Exercise Progression</div>
+      <div class="input-group"><select id="exProgressSelect" onchange="updateExProgressChart()">${allLogged.map(e=>`<option value="${e}">${e}</option>`).join('')}</select></div>
+      <div class="tabs" id="progMetric"><button class="tab active" onclick="setProgMetric('weight',this)">Top Weight</button><button class="tab" onclick="setProgMetric('volume',this)">Volume</button><button class="tab" onclick="setProgMetric('reps',this)">Top Reps</button></div>
+      <div class="chart-wrap"><canvas id="exProgressChart"></canvas></div></div>`:''}
+    <div class="card"><div class="card-title">Recent Sessions</div>${renderRecentWorkouts(workouts)}</div>
+  `;
+}
+// Cardio CRUD
+function openCardioModal(editId){
+  const existing=editId?DB.get('cardio').find(c=>c.id===editId):null;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${existing?'Edit':'Log'} Cardio</div>
+    <div class="input-group"><label>Type</label><select id="cardioType">${CARDIO_TYPES.map(t=>`<option value="${t}" ${existing&&existing.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="input-row">
+      <div class="input-group"><label>Duration (min)</label><input type="number" id="cardioDur" value="${existing?existing.duration:90}" placeholder="minutes"></div>
+      <div class="input-group"><label>Vest Weight (kg)</label><input type="number" id="cardioVest" value="${existing&&existing.vestKg?existing.vestKg:''}" placeholder="0 = none" step="0.5"></div>
+    </div>
+    <div class="input-group"><label>Date</label><input type="date" id="cardioDate" value="${existing?existing.date:viewDate}"></div>
+    <div class="input-group"><label>Note (optional)</label><input type="text" id="cardioNote" value="${existing&&existing.note?existing.note:''}" placeholder="e.g. hilly route, easy pace"></div>
+    <button class="btn btn-primary btn-block mt-12" onclick="saveCardio('${editId||''}')">${existing?'Update':'Save'}</button>`;showModal();
+}
+function editCardio(id){openCardioModal(id);}
+function saveCardio(editId){
+  const entry={id:editId||DB.id(),type:document.getElementById('cardioType').value,duration:+document.getElementById('cardioDur').value||0,vestKg:+document.getElementById('cardioVest').value||0,date:document.getElementById('cardioDate').value||viewDate,note:document.getElementById('cardioNote').value.trim()};
+  let cardio=DB.get('cardio');
+  if(editId){cardio=cardio.map(c=>c.id===editId?entry:c);}else{cardio.push(entry);}
+  DB.set('cardio',cardio);closeModal();render();
+}
+function deleteCardio(id){DB.set('cardio',DB.get('cardio').filter(c=>c.id!==id));render();}
+
+// Day templates with per-exercise save
+function openDayTemplate(templateName){
+  const tmpl=DAY_TEMPLATES[templateName];if(!tmpl)return;
+  let html=`<div class="modal-title">${templateName} Day</div><div class="input-group"><label>Date</label><input type="date" id="tmplDate" value="${viewDate}"></div><div class="divider"></div>`;
+  tmpl.exercises.forEach((ex,eIdx)=>{
+    html+=`<div id="exBlock_${eIdx}" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:14px;font-weight:800;color:var(--teal)">${ex.name} <span style="color:var(--text-muted);font-weight:600;font-size:12px">${ex.sets}×${ex.reps}</span></div><button class="ex-save-btn" id="exSaveBtn_${eIdx}" onclick="saveSingleTemplateExercise('${templateName}',${eIdx})">Save</button></div>`;
+    for(let s=0;s<ex.sets;s++){html+=`<div class="set-input-block"><div class="sib-num">${s+1}</div><input type="number" id="tw_${eIdx}_${s}" placeholder="kg" step="0.5"><div class="sib-x">×</div><input type="number" id="tr_${eIdx}_${s}" placeholder="reps"></div>`;}
+    html+=`</div>`;
+  });
+  html+=`<div class="divider"></div><button class="btn btn-primary btn-block" onclick="saveDayTemplate('${templateName}')">Save All Remaining</button>`;
+  document.getElementById('modalContent').innerHTML=html;
+  tmpl.exercises.forEach((ex,eIdx)=>{const last=DB.get('workouts').filter(w=>w.exercise===ex.name).pop();if(last)last.sets.forEach((s,sIdx)=>{if(sIdx<ex.sets){const wi=document.getElementById(`tw_${eIdx}_${sIdx}`);const ri=document.getElementById(`tr_${eIdx}_${sIdx}`);if(wi)wi.placeholder=s.weight+' (prev)';if(ri)ri.placeholder=s.reps+' (prev)';}});});
+  showModal();
+}
+function saveSingleTemplateExercise(templateName,eIdx){
+  const tmpl=DAY_TEMPLATES[templateName];const ex=tmpl.exercises[eIdx];const date=document.getElementById('tmplDate').value||viewDate;const sets=[];
+  for(let s=0;s<ex.sets;s++){const w=+document.getElementById(`tw_${eIdx}_${s}`).value;const r=+document.getElementById(`tr_${eIdx}_${s}`).value;if(w||r)sets.push({weight:w||0,reps:r||0});}
+  if(!sets.length)return;const workouts=DB.get('workouts');workouts.push({id:DB.id(),exercise:ex.name,sets,date});DB.set('workouts',workouts);
+  const btn=document.getElementById(`exSaveBtn_${eIdx}`);btn.textContent='✓ Saved';btn.classList.add('saved');document.getElementById(`exBlock_${eIdx}`).classList.add('ex-block-saved');
+  for(let s=0;s<ex.sets;s++){const wi=document.getElementById(`tw_${eIdx}_${s}`);const ri=document.getElementById(`tr_${eIdx}_${s}`);if(wi)wi.disabled=true;if(ri)ri.disabled=true;}
+}
+function saveDayTemplate(templateName){
+  const tmpl=DAY_TEMPLATES[templateName];const date=document.getElementById('tmplDate').value||viewDate;const workouts=DB.get('workouts');
+  tmpl.exercises.forEach((ex,eIdx)=>{const btn=document.getElementById(`exSaveBtn_${eIdx}`);if(btn&&btn.classList.contains('saved'))return;const sets=[];for(let s=0;s<ex.sets;s++){const w=+document.getElementById(`tw_${eIdx}_${s}`).value;const r=+document.getElementById(`tr_${eIdx}_${s}`).value;if(w||r)sets.push({weight:w||0,reps:r||0});}if(sets.length)workouts.push({id:DB.id(),exercise:ex.name,sets,date});});
+  DB.set('workouts',workouts);closeModal();render();
+}
+function openSingleExerciseModal(editId){
+  const existing=editId?DB.get('workouts').find(w=>w.id===editId):null;
+  const custom=DB.get('customExercises',[]);const all=[...new Set([...ALL_EXERCISES,...custom])].sort();
+  const numSets=existing?existing.sets.length:3;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${existing?'Edit':'Log'} Exercise</div>
+    <div class="input-group"><label>Exercise</label><select id="wExercise">${all.map(e=>`<option value="${e}" ${existing&&existing.exercise===e?'selected':''}>${e}</option>`).join('')}<option value="__custom">+ Custom Exercise</option></select></div>
+    <div id="customExField" class="hidden input-group"><label>Exercise Name</label><input type="text" id="wCustomName" placeholder="e.g. Cable Lateral Raise"></div>
+    <div class="input-group"><label>Date</label><input type="date" id="wDate" value="${existing?existing.date:viewDate}"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px">Sets</div>
+    <div id="setsContainer">${Array.from({length:numSets},(_, n)=>`<div class="set-input-block"><div class="sib-num">${n+1}</div><input type="number" class="set-weight" value="${existing?existing.sets[n]?.weight||'':''}" placeholder="kg" step="0.5"><div class="sib-x">×</div><input type="number" class="set-reps" value="${existing?existing.sets[n]?.reps||'':''}" placeholder="reps"></div>`).join('')}</div>
+    <button class="btn btn-secondary btn-sm btn-block mb-8" onclick="addSetRow()">+ Add Set</button>
+    <button class="btn btn-primary btn-block" onclick="saveWorkout('${editId||''}')">${existing?'Update':'Save'} Exercise</button>`;
+  document.getElementById('wExercise').addEventListener('change',function(){document.getElementById('customExField').classList.toggle('hidden',this.value!=='__custom');});showModal();
+}
+function editWorkoutExercise(id){openSingleExerciseModal(id);}
+function addSetRow(){const c=document.getElementById('setsContainer');const n=c.children.length+1;const d=document.createElement('div');d.className='set-input-block';d.innerHTML=`<div class="sib-num">${n}</div><input type="number" class="set-weight" placeholder="kg" step="0.5"><div class="sib-x">×</div><input type="number" class="set-reps" placeholder="reps">`;c.appendChild(d);}
+function saveWorkout(editId){
+  let exercise=document.getElementById('wExercise').value;
+  if(exercise==='__custom'){exercise=document.getElementById('wCustomName').value.trim();if(!exercise)return;const customs=DB.get('customExercises',[]);if(!customs.includes(exercise)){customs.push(exercise);DB.set('customExercises',customs);}}
+  const weights=document.querySelectorAll('.set-weight');const reps=document.querySelectorAll('.set-reps');const sets=[];
+  weights.forEach((w,i)=>{const wv=+w.value,rv=+reps[i].value;if(wv||rv)sets.push({weight:wv||0,reps:rv||0});});
+  if(!sets.length)return;
+  const entry={id:editId||DB.id(),exercise,sets,date:document.getElementById('wDate').value||viewDate};
+  let workouts=DB.get('workouts');
+  if(editId){workouts=workouts.map(w=>w.id===editId?entry:w);}else{workouts.push(entry);}
+  DB.set('workouts',workouts);closeModal();render();
+}
+function deleteWorkoutEntries(ids){const idArr=ids.split(',');DB.set('workouts',DB.get('workouts').filter(w=>!idArr.includes(w.id)));render();}
+let progMetric='weight';
+function setProgMetric(m,btn){progMetric=m;document.querySelectorAll('#progMetric .tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');updateExProgressChart();}
+function updateExProgressChart(){
+  const sel=document.getElementById('exProgressSelect');if(!sel)return;const exercise=sel.value;const workouts=DB.get('workouts').filter(w=>w.exercise===exercise);
+  const dm={};workouts.forEach(w=>{if(!dm[w.date])dm[w.date]=[];dm[w.date].push(...w.sets);});const dates=Object.keys(dm).sort();let values,label,color;
+  if(progMetric==='weight'){values=dates.map(d=>Math.max(...dm[d].map(s=>s.weight)));label='Top Weight (kg)';color='#2dd4bf';}
+  else if(progMetric==='volume'){values=dates.map(d=>dm[d].reduce((sum,s)=>sum+s.weight*s.reps,0));label='Volume (kg×reps)';color='#a78bfa';}
+  else{values=dates.map(d=>Math.max(...dm[d].map(s=>s.reps)));label='Top Reps';color='#fbbf24';}
+  if(chartInstances.exProg)chartInstances.exProg.destroy();
+  if(dates.length>=1)chartInstances.exProg=makeLineChart('exProgressChart',dates,values,label,color,true);
+}
+function initWorkoutCharts(){setTimeout(updateExProgressChart,50);}
+function renderRecentWorkouts(workouts){
+  const bd={};workouts.forEach(w=>{if(!bd[w.date])bd[w.date]=[];bd[w.date].push(w);});const dates=Object.keys(bd).sort().reverse().slice(0,10);
+  if(!dates.length)return '<div class="empty-state"><p>No workout history yet</p></div>';
+  return dates.map(d=>{const ex=[...new Set(bd[d].map(w=>w.exercise))];const ts=bd[d].reduce((s,w)=>s+w.sets.length,0);return `<div class="log-entry"><div class="log-entry-info"><div class="log-entry-main">${fmtDate(d)}</div><div class="log-entry-sub">${ex.join(', ')} · ${ts} sets</div></div></div>`;}).join('');
+}
+
+// ═══ WEIGHT ═══
+function renderWeight(){
+  const weights=DB.get('weight');const sorted=[...weights].sort((a,b)=>b.date.localeCompare(a.date));
+  const lastW=sorted[0];const startW=weights.length?weights[0]:null;const diff=(lastW&&startW&&weights.length>1)?(lastW.kg-startW.kg).toFixed(1):null;
+  const d7=new Date();d7.setDate(d7.getDate()-7);const weekW=weights.filter(w=>w.date>=d7.toISOString().slice(0,10));
+  const weekAvg=weekW.length?(weekW.reduce((s,w)=>s+w.kg,0)/weekW.length).toFixed(1):'—';
+  return `
+    <div class="section-header"><div class="section-title">Body Weight</div><button class="btn btn-primary btn-sm" onclick="openWeightModal()">+ Log</button></div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-value" style="color:var(--blue)">${lastW?lastW.kg:'—'}</div><div class="stat-label">Current (kg)</div></div>
+      <div class="stat-box"><div class="stat-value" style="color:${diff&&diff<0?'var(--success)':diff&&diff>0?'var(--danger)':'var(--text-muted)'}">${diff!==null?(diff>0?'+':'')+diff:'—'}</div><div class="stat-label">Total Change</div></div>
+    </div>
+    <div class="stats-row"><div class="stat-box"><div class="stat-value" style="color:var(--purple);font-size:20px">${weekAvg}</div><div class="stat-label">7d Average</div></div><div class="stat-box"><div class="stat-value" style="color:var(--teal);font-size:20px">${weights.length}</div><div class="stat-label">Entries</div></div></div>
+    <div class="card"><div class="card-title">Weight Progression</div>
+      <div class="range-picker" id="weightRangePicker"><button class="range-btn" onclick="setWeightRange(30,this)">30d</button><button class="range-btn" onclick="setWeightRange(90,this)">90d</button><button class="range-btn active" onclick="setWeightRange(180,this)">6m</button><button class="range-btn" onclick="setWeightRange(365,this)">1y</button></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="weightChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Log History</div>
+      ${sorted.slice(0,20).map(w=>`<div class="log-entry"><div class="log-entry-info"><div class="log-entry-main">${w.kg} kg</div><div class="log-entry-sub">${fmtDate(w.date)}${w.note?' · '+w.note:''}</div></div><div class="log-entry-actions"><button class="edit-btn" onclick="openWeightModal('${w.id}')">✎</button><button class="delete-btn" onclick="deleteWeight('${w.id}')">&times;</button></div></div>`).join('')}
+      ${!sorted.length?'<div class="empty-state"><p>No weight entries yet</p></div>':''}
+    </div>`;
+}
+let weightRangeDays=180;
+function setWeightRange(days,btn){weightRangeDays=days;document.querySelectorAll('#weightRangePicker .range-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(chartInstances.weightMain)chartInstances.weightMain.destroy();initWeightCharts();}
+function initWeightCharts(){const weights=DB.get('weight');const cutoff=new Date();cutoff.setDate(cutoff.getDate()-weightRangeDays);const filtered=weights.filter(w=>w.date>=cutoff.toISOString().slice(0,10));if(filtered.length>=1)chartInstances.weightMain=makeLineChart('weightChart',filtered.map(w=>w.date),filtered.map(w=>w.kg),'Weight (kg)','#60a5fa',true,null,true);}
+function openWeightModal(editId){
+  const existing=editId?DB.get('weight').find(w=>w.id===editId):null;
+  document.getElementById('modalContent').innerHTML=`<div class="modal-title">${existing?'Edit':'Log'} Weight</div>
+    <div class="input-group"><label>Weight (kg)</label><input type="number" id="wKg" step="0.1" value="${existing?existing.kg:''}" placeholder="e.g. 128.0"></div>
+    <div class="input-group"><label>Date</label><input type="date" id="wDateField" value="${existing?existing.date:viewDate}"></div>
+    <div class="input-group"><label>Note (optional)</label><input type="text" id="wNote" value="${existing&&existing.note?existing.note:''}" placeholder="e.g. morning, fasted"></div>
+    <button class="btn btn-primary btn-block mt-12" onclick="saveWeight('${editId||''}')">${existing?'Update':'Save'}</button>`;showModal();
+}
+function saveWeight(editId){
+  const kg=parseFloat(document.getElementById('wKg').value);if(!kg)return;
+  const entry={id:editId||DB.id(),kg,date:document.getElementById('wDateField').value||viewDate,note:document.getElementById('wNote').value.trim()};
+  let weights=DB.get('weight');
+  if(editId){weights=weights.map(w=>w.id===editId?entry:w);}else{weights.push(entry);}
+  weights.sort((a,b)=>a.date.localeCompare(b.date));DB.set('weight',weights);closeModal();render();
+}
+function deleteWeight(id){DB.set('weight',DB.get('weight').filter(w=>w.id!==id));render();}
+
+// ═══ PHOTOS ═══
+let pendingPhotoData=null;
+function renderPhotos(){
+  const photos=DB.get('photos');const sorted=[...photos].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+    <div class="section-header"><div class="section-title">Progress Photos</div><button class="btn btn-primary btn-sm" onclick="document.getElementById('photoInput').click()">+ Photo</button></div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+    ${sorted.length?`<div class="photo-grid">${sorted.map(p=>`<div class="photo-item" onclick="openLightbox('${p.id}')"><img src="${p.data}" alt="" loading="lazy">${p.kg?`<div class="photo-weight">${p.kg}kg</div>`:''}<div class="photo-date">${fmtDateShort(p.date)}</div><button class="photo-delete" onclick="event.stopPropagation();deletePhoto('${p.id}')">&times;</button></div>`).join('')}</div>`:`<div class="empty-state" style="padding:60px 20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><p>No progress photos yet.</p></div>`}
+    ${sorted.length>=2?`<div class="card mt-12"><div class="card-title">Side by Side</div><div style="display:flex;gap:6px"><div style="flex:1"><div class="text-sm text-secondary text-center mb-8">First (${fmtDateShort(sorted[sorted.length-1].date)})${sorted[sorted.length-1].kg?' · '+sorted[sorted.length-1].kg+'kg':''}</div><img src="${sorted[sorted.length-1].data}" style="width:100%;border-radius:8px" alt=""></div><div style="flex:1"><div class="text-sm text-secondary text-center mb-8">Latest (${fmtDateShort(sorted[0].date)})${sorted[0].kg?' · '+sorted[0].kg+'kg':''}</div><img src="${sorted[0].data}" style="width:100%;border-radius:8px" alt=""></div></div></div>`:''}`;
+}
+function handlePhoto(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){const img=new Image();img.onload=function(){const canvas=document.createElement('canvas');const MAX=800;let w=img.width,h=img.height;if(w>h&&w>MAX){h=h*MAX/w;w=MAX;}else if(h>MAX){w=w*MAX/h;h=MAX;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);pendingPhotoData=canvas.toDataURL('image/jpeg',0.7);openPhotoDetailsModal();};img.src=ev.target.result;};reader.readAsDataURL(file);e.target.value='';}
+function openPhotoDetailsModal(){const weights=DB.get('weight');const lastW=weights.length?weights[weights.length-1]:null;document.getElementById('modalContent').innerHTML=`<div class="modal-title">Save Progress Photo</div><div style="text-align:center;margin-bottom:14px"><img src="${pendingPhotoData}" style="max-width:100%;max-height:200px;border-radius:var(--radius);object-fit:contain"></div><div class="input-row"><div class="input-group"><label>Body Weight (kg)</label><input type="number" id="photoKg" step="0.1" value="${lastW?lastW.kg:''}" placeholder="e.g. 120.5"></div><div class="input-group"><label>Date</label><input type="date" id="photoDate" value="${viewDate}"></div></div><div class="input-group"><label>Note (optional)</label><input type="text" id="photoNote" placeholder="e.g. front pose, morning"></div><button class="btn btn-primary btn-block mt-12" onclick="savePhotoWithDetails()">Save Photo</button>`;showModal();}
+function savePhotoWithDetails(){if(!pendingPhotoData)return;const photos=DB.get('photos');photos.push({id:DB.id(),data:pendingPhotoData,date:document.getElementById('photoDate').value||viewDate,kg:parseFloat(document.getElementById('photoKg').value)||null,note:document.getElementById('photoNote').value.trim()});DB.set('photos',photos);pendingPhotoData=null;closeModal();render();}
+function deletePhoto(id){if(confirm('Delete this photo?')){DB.set('photos',DB.get('photos').filter(p=>p.id!==id));render();}}
+function openLightbox(id){const p=DB.get('photos').find(x=>x.id===id);if(!p)return;document.getElementById('lightboxImg').src=p.data;let info=fmtDate(p.date);if(p.kg)info+=' · '+p.kg+' kg';if(p.note)info+=' · '+p.note;document.getElementById('lightboxInfo').textContent=info;document.getElementById('lightbox').classList.add('show');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('show');}
+
+// ═══ BARCODE SCANNER & FOOD SEARCH (Open Food Facts) ═══
+let barcodeScanner=null;
+
+function startBarcodeScanner(){
+  const readerEl=document.getElementById('barcodeReader');
+  const statusEl=document.getElementById('scanStatus');
+  if(!readerEl)return;
+
+  // If already running, stop it
+  if(barcodeScanner){stopBarcodeScanner();return;}
+
+  statusEl.textContent='Starting camera...';
+  readerEl.style.display='block';
+
+  barcodeScanner=new Html5Qrcode('barcodeReader');
+  barcodeScanner.start(
+    {facingMode:'environment'},
+    {fps:10,qrbox:{width:280,height:120},formatsToSupport:[
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+    ]},
+    (code)=>{
+      // Barcode detected
+      stopBarcodeScanner();
+      statusEl.innerHTML='Barcode: <strong>'+code+'</strong> — looking up...';
+      lookupBarcode(code);
+    },
+    ()=>{}
+  ).then(()=>{
+    statusEl.textContent='Point camera at barcode';
+  }).catch(err=>{
+    statusEl.innerHTML='<span style="color:var(--danger)">Camera error: '+err+'</span>';
+    barcodeScanner=null;
+  });
+}
+
+function stopBarcodeScanner(){
+  if(barcodeScanner){
+    try{barcodeScanner.stop().then(()=>{barcodeScanner.clear();}).catch(()=>{});}catch(e){}
+    barcodeScanner=null;
+  }
+  const el=document.getElementById('barcodeReader');
+  if(el){el.innerHTML='';el.style.display='none';}
+}
+
+async function lookupBarcode(code){
+  const statusEl=document.getElementById('scanStatus');
+  try{
+    const resp=await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+    const data=await resp.json();
+    if(data.status===1&&data.product){
+      applyOpenFoodFactsProduct(data.product);
+    }else{
+      statusEl.innerHTML='<span style="color:var(--warning)">Product not found in database. Try searching by name instead.</span>';
+    }
+  }catch(e){
+    statusEl.innerHTML='<span style="color:var(--danger)">Lookup failed — check internet connection</span>';
+  }
+}
+
+function applyOpenFoodFactsProduct(product){
+  const statusEl=document.getElementById('scanStatus');
+  const n=product.nutriments||{};
+  const name=product.product_name||product.product_name_de||product.product_name_en||'Unknown';
+  const brand=product.brands||'';
+  const servingG=product.serving_quantity||100;
+
+  // Get per-100g values
+  const per100={
+    cal:Math.round(n['energy-kcal_100g']||n['energy-kcal']||(n['energy_100g']?n['energy_100g']/4.184:0)),
+    p:Math.round((n.proteins_100g||0)*10)/10,
+    c:Math.round((n.carbohydrates_100g||0)*10)/10,
+    f:Math.round((n.fat_100g||0)*10)/10,
+  };
+
+  // Show amount adjuster
+  statusEl.innerHTML=`
+    <div style="text-align:left;margin-top:8px">
+      <div style="font-size:14px;font-weight:700;color:var(--text-primary)">${name}</div>
+      ${brand?`<div style="font-size:12px;color:var(--text-muted)">${brand}</div>`:''}
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Per 100g: ${per100.cal}kcal · P${per100.p}g · C${per100.c}g · F${per100.f}g</div>
+      <div class="amount-adjust">
+        <label>Amount:</label>
+        <input type="number" id="offAmount" value="${servingG}" step="1" oninput="recalcOFF()">
+        <span class="aa-per">grams</span>
+      </div>
+      <div id="offCalcResult" style="font-size:13px;font-weight:700;color:var(--teal);margin-top:4px"></div>
+      <button class="btn btn-primary btn-sm btn-block mt-8" onclick="applyOFFToForm()">Apply to Form</button>
+    </div>
+  `;
+
+  // Store per-100g data for recalculation
+  window._offPer100=per100;
+  window._offName=name+(brand?' ('+brand+')':'');
+  recalcOFF();
+}
+
+function recalcOFF(){
+  const g=parseFloat(document.getElementById('offAmount').value)||100;
+  const p=window._offPer100;
+  const factor=g/100;
+  const cal=Math.round(p.cal*factor);
+  const prot=Math.round(p.p*factor*10)/10;
+  const carb=Math.round(p.c*factor*10)/10;
+  const fat=Math.round(p.f*factor*10)/10;
+  window._offCalc={cal,p:prot,c:carb,f:fat,g};
+  const el=document.getElementById('offCalcResult');
+  if(el)el.textContent=`${g}g → ${cal}kcal · P${prot}g · C${carb}g · F${fat}g`;
+}
+
+function applyOFFToForm(){
+  const c=window._offCalc;
+  if(!c)return;
+  document.getElementById('mealName').value=window._offName||'';
+  document.getElementById('mealCal').value=c.cal;
+  document.getElementById('mealP').value=c.p;
+  document.getElementById('mealC').value=c.c;
+  document.getElementById('mealF').value=c.f;
+  document.getElementById('scanStatus').innerHTML='<span style="color:var(--success)">✓ Applied — adjust values if needed</span>';
+}
+
+// Food search
+function toggleFoodSearch(){
+  const el=document.getElementById('foodSearchArea');
+  el.classList.toggle('hidden');
+  if(!el.classList.contains('hidden')){
+    stopBarcodeScanner();
+    setTimeout(()=>{const inp=document.getElementById('foodSearchInput');if(inp)inp.focus();},100);
+  }
+}
+
+async function searchFood(){
+  const query=document.getElementById('foodSearchInput').value.trim();
+  if(!query)return;
+  const resultsEl=document.getElementById('foodResults');
+  const statusEl=document.getElementById('scanStatus');
+  resultsEl.innerHTML='<div class="text-center text-sm text-secondary" style="padding:12px">Searching...</div>';
+  statusEl.textContent='';
+  try{
+    const resp=await fetch(`https://world.openfoodfacts.net/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,brands,nutriments,serving_quantity,code`);
+    const data=await resp.json();
+    if(data.products&&data.products.length){
+      resultsEl.innerHTML=data.products.filter(p=>p.product_name).map((p,i)=>{
+        const n=p.nutriments||{};
+        const cal=Math.round(n['energy-kcal_100g']||0);
+        const prot=Math.round((n.proteins_100g||0)*10)/10;
+        return `<div class="food-result-item" onclick="selectFoodResult(${i})">
+          <div><div class="fr-name">${p.product_name}</div>${p.brands?`<div class="fr-brand">${p.brands}</div>`:''}</div>
+          <div class="fr-macros">${cal}kcal<br>P${prot}g /100g</div>
+        </div>`;
+      }).join('');
+      // Store results for selection
+      window._offSearchResults=data.products.filter(p=>p.product_name);
+    }else{
+      resultsEl.innerHTML='<div class="text-center text-sm text-secondary" style="padding:12px">No results found. Try different keywords.</div>';
+    }
+  }catch(e){
+    resultsEl.innerHTML='<div class="text-center text-sm" style="padding:12px;color:var(--danger)">Search failed — check internet connection</div>';
+  }
+}
+
+function selectFoodResult(idx){
+  const product=window._offSearchResults[idx];
+  if(!product)return;
+  document.getElementById('foodResults').innerHTML='';
+  document.getElementById('foodSearchArea').classList.add('hidden');
+  applyOpenFoodFactsProduct(product);
+}
+
+// Handle enter key in search
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='foodSearchInput'){e.preventDefault();searchFood();}
+});
+
+// Clean up scanner when modal closes
+const origCloseModal=closeModal;
+closeModal=function(){stopBarcodeScanner();origCloseModal();};
+
+// ═══ MODAL ═══
+function showModal(){document.getElementById('modalOverlay').classList.add('show');}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+function closeModalOutside(e){if(e.target===e.currentTarget)closeModal();}
+
+// ═══ CHARTS ═══
+function chartDefaults(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#242428',titleColor:'#e8e8f0',bodyColor:'#e8e8f0',borderColor:'rgba(45,212,191,0.3)',borderWidth:1,padding:10,cornerRadius:8,displayColors:false,titleFont:{size:12,weight:'600'},bodyFont:{size:13}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6b88',font:{size:10},maxTicksLimit:8,callback:function(val){const l=this.getLabelForValue(val);return l&&l.length===10?fmtDateShort(l):l;}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6b88',font:{size:11}}}}};}
+function makeLineChart(canvasId,labels,data,label,color,fill=false,targetLine=null,pointsVisible=false){const canvas=document.getElementById(canvasId);if(!canvas)return null;const datasets=[{label,data,borderColor:color,backgroundColor:fill?color+'18':'transparent',borderWidth:2.5,tension:0.35,fill,pointBackgroundColor:color,pointBorderColor:color,pointRadius:pointsVisible?3:(data.length<20?3:0),pointHoverRadius:5}];if(targetLine!==null)datasets.push({label:'Target',data:new Array(labels.length).fill(targetLine),borderColor:'rgba(255,255,255,0.15)',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false});return new Chart(canvas,{type:'line',data:{labels,datasets},options:chartDefaults()});}
+function makeBarChart(canvasId,labels,data,label,color,targetLine=null){const canvas=document.getElementById(canvasId);if(!canvas)return null;const datasets=[{label,data,backgroundColor:color+'aa',borderColor:color,borderWidth:1,borderRadius:4,barPercentage:0.7}];if(targetLine!==null)datasets.push({label:'Target',data:new Array(labels.length).fill(targetLine),borderColor:'rgba(255,255,255,0.2)',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false,type:'line'});return new Chart(canvas,{type:'bar',data:{labels,datasets},options:chartDefaults()});}
+
+// ═══ DATA MGMT ═══
+const DATA_KEYS=['nutrition','workouts','weight','photos','cardio','targets','mealPresets','customExercises'];
+function gatherAllData(){const data={};DATA_KEYS.forEach(k=>{data[k]=DB.get(k,k==='targets'?{}:[]);});data.exported=new Date().toISOString();return data;}
+function exportData(){const blob=new Blob([JSON.stringify(gatherAllData(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fittrack-backup-'+realToday()+'.json';a.click();}
+function importFromJson(jsonStr){try{const d=JSON.parse(jsonStr);DATA_KEYS.forEach(k=>{if(d[k])DB.set(k,d[k]);});return true;}catch{return false;}}
+function importData(){const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=function(e){const reader=new FileReader();reader.onload=function(ev){if(importFromJson(ev.target.result)){alert('Data imported!');render();}else{alert('Invalid backup file');}};reader.readAsText(e.target.files[0]);};input.click();}
+function clearAllData(){if(confirm('Delete ALL data? This cannot be undone.')){DATA_KEYS.forEach(k=>localStorage.removeItem('ft_'+k));render();closeModal();}}
+
+// ═══ GOOGLE DRIVE SYNC ═══
+const GDRIVE_BACKUP_FILE='fittrack-backup.json';
+let gdriveToken=null;
+let gdriveTokenClient=null;
+let gdriveReady=false;
+
+function getGdriveConfig(){return DB.get('gdriveConfig',{clientId:'',enabled:false,lastBackup:null});}
+function setGdriveConfig(cfg){DB.set('gdriveConfig',cfg);}
+
+function saveGdriveToken(token){
+  gdriveToken=token;
+  localStorage.setItem('ft_gdriveToken',token);
+  localStorage.setItem('ft_gdriveTokenTime',Date.now().toString());
+}
+function loadGdriveToken(){
+  const token=localStorage.getItem('ft_gdriveToken');
+  const time=parseInt(localStorage.getItem('ft_gdriveTokenTime')||'0');
+  // Google access tokens last ~3600 seconds; treat as valid for 50 min
+  if(token&&(Date.now()-time)<3000000){
+    gdriveToken=token;
+    return true;
+  }
+  return false;
+}
+function clearGdriveToken(){
+  gdriveToken=null;
+  localStorage.removeItem('ft_gdriveToken');
+  localStorage.removeItem('ft_gdriveTokenTime');
+}
+
+function initGdriveClient(){
+  const cfg=getGdriveConfig();
+  if(!cfg.clientId||typeof google==='undefined'||!google.accounts)return;
+  try{
+    gdriveTokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:cfg.clientId,
+      scope:'https://www.googleapis.com/auth/drive.file',
+      callback:(resp)=>{
+        if(resp.error){console.error('GDrive auth error:',resp);return;}
+        saveGdriveToken(resp.access_token);
+        gdriveReady=true;
+        if(document.getElementById('modalOverlay').classList.contains('show')){openSettingsModal();}
+        gdriveSyncOnOpen();
+      }
+    });
+  }catch(e){console.error('GDrive init error:',e);}
+}
+
+// Try to silently get a fresh token without user interaction
+async function gdriveSilentAuth(){
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!cfg.clientId)return false;
+
+  // If we have a cached token that's still valid, use it
+  if(loadGdriveToken()){gdriveReady=true;return true;}
+
+  // Otherwise try silent refresh (no popup if user previously consented)
+  if(!gdriveTokenClient)initGdriveClient();
+  if(!gdriveTokenClient)return false;
+
+  return new Promise(resolve=>{
+    gdriveTokenClient.callback=(resp)=>{
+      if(resp.error){
+        console.log('FitTrack: Silent auth failed, will need manual reconnect');
+        resolve(false);
+        return;
+      }
+      saveGdriveToken(resp.access_token);
+      gdriveReady=true;
+      resolve(true);
+    };
+    try{
+      gdriveTokenClient.requestAccessToken({prompt:''});
+    }catch(e){resolve(false);}
+  });
+}
+
+function gdriveConnect(){
+  const clientId=document.getElementById('gdriveClientId').value.trim();
+  if(!clientId){alert('Please enter your Google Client ID');return;}
+  const cfg=getGdriveConfig();cfg.clientId=clientId;cfg.enabled=true;setGdriveConfig(cfg);
+  initGdriveClient();
+  // This one uses consent prompt since it's first connection
+  if(gdriveTokenClient)gdriveTokenClient.requestAccessToken({prompt:'consent'});
+}
+
+function gdriveDisconnect(){
+  if(gdriveToken&&typeof google!=='undefined'){try{google.accounts.oauth2.revoke(gdriveToken);}catch(e){}}
+  clearGdriveToken();
+  gdriveTokenClient=null;gdriveReady=false;
+  const cfg=getGdriveConfig();cfg.enabled=false;cfg.lastBackup=null;setGdriveConfig(cfg);
+  openSettingsModal();
+}
+
+async function gdriveEnsureToken(){
+  if(gdriveToken){
+    // Check if token might be expired
+    const time=parseInt(localStorage.getItem('ft_gdriveTokenTime')||'0');
+    if(Date.now()-time>3000000){
+      // Token likely expired, try silent refresh
+      clearGdriveToken();
+      return await gdriveSilentAuth();
+    }
+    return true;
+  }
+  return await gdriveSilentAuth();
+}
+
+async function gdriveFindFile(){
+  const resp=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_BACKUP_FILE}'+and+trashed=false&fields=files(id,name,modifiedTime)&spaces=drive`,{
+    headers:{'Authorization':'Bearer '+gdriveToken}
+  });
+  if(!resp.ok)return null;
+  const data=await resp.json();
+  return data.files&&data.files.length?data.files[0]:null;
+}
+
+async function gdriveUploadBackup(statusEl){
+  if(!await gdriveEnsureToken()){if(statusEl)statusEl.textContent='Not authenticated';return false;}
+  if(statusEl)statusEl.textContent='Uploading to Google Drive...';
+  const content=JSON.stringify(gatherAllData(),null,2);
+  try{
+    const existing=await gdriveFindFile();
+    let resp;
+    if(existing){
+      // Update existing file
+      resp=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`,{
+        method:'PATCH',headers:{'Authorization':'Bearer '+gdriveToken,'Content-Type':'application/json'},body:content
+      });
+    }else{
+      // Create new file
+      const metadata={name:GDRIVE_BACKUP_FILE,mimeType:'application/json'};
+      const form=new FormData();
+      form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+      form.append('file',new Blob([content],{type:'application/json'}));
+      resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+        method:'POST',headers:{'Authorization':'Bearer '+gdriveToken},body:form
+      });
+    }
+    if(resp.ok){
+      const cfg=getGdriveConfig();cfg.lastBackup=new Date().toISOString();setGdriveConfig(cfg);
+      // Cache file ID for beforeunload
+      try{const rData=await resp.clone().json();if(rData.id)localStorage.setItem('ft_gdriveFileId',rData.id);}catch(e){}
+      if(existing)localStorage.setItem('ft_gdriveFileId',existing.id);
+      if(statusEl)statusEl.innerHTML='<span style="color:var(--success)">✓ Backed up at '+new Date().toLocaleTimeString('de-DE')+'</span>';
+      return true;
+    }else{
+      const err=await resp.text();
+      if(statusEl)statusEl.innerHTML='<span style="color:var(--danger)">Upload failed: '+resp.status+'</span>';
+      console.error('GDrive upload error:',err);
+      return false;
+    }
+  }catch(e){
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--danger)">Upload failed: '+e.message+'</span>';
+    return false;
+  }
+}
+
+async function gdriveRestoreBackup(statusEl){
+  if(!await gdriveEnsureToken()){if(statusEl)statusEl.textContent='Not authenticated';return;}
+  if(statusEl)statusEl.textContent='Downloading from Google Drive...';
+  try{
+    const file=await gdriveFindFile();
+    if(!file){if(statusEl)statusEl.innerHTML='<span style="color:var(--warning)">No backup found on Drive</span>';return;}
+    const resp=await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,{
+      headers:{'Authorization':'Bearer '+gdriveToken}
+    });
+    if(!resp.ok){if(statusEl)statusEl.innerHTML='<span style="color:var(--danger)">Download failed</span>';return;}
+    const text=await resp.text();
+    if(importFromJson(text)){
+      if(statusEl)statusEl.innerHTML='<span style="color:var(--success)">✓ Restored from Drive backup ('+fmtDate(file.modifiedTime.slice(0,10))+')</span>';
+      render();
+    }else{if(statusEl)statusEl.innerHTML='<span style="color:var(--danger)">Invalid backup data on Drive</span>';}
+  }catch(e){if(statusEl)statusEl.innerHTML='<span style="color:var(--danger)">Restore failed: '+e.message+'</span>';}
+}
+
+async function gdriveAutoBackup(){
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!cfg.clientId)return;
+  const last=cfg.lastBackup?new Date(cfg.lastBackup).getTime():0;
+  const hoursSince=(Date.now()-last)/3600000;
+  if(hoursSince<1)return;
+  console.log('FitTrack: Auto-pushing to Google Drive...');
+  const ok=await gdriveUploadBackup(null);
+  if(ok)console.log('FitTrack: Auto-push complete');
+}
+
+// Sync-on-open: pull from Drive first, then render
+async function gdriveSyncOnOpen(){
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!cfg.clientId)return;
+  showSyncIndicator('Syncing...');
+  if(!await gdriveEnsureToken()){hideSyncIndicator();return;}
+  try{
+    const file=await gdriveFindFile();
+    if(file){
+      const resp=await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,{
+        headers:{'Authorization':'Bearer '+gdriveToken}
+      });
+      if(resp.ok){
+        const text=await resp.text();
+        const remote=JSON.parse(text);
+        const remoteTime=remote.exported?new Date(remote.exported).getTime():0;
+        const localData=gatherAllData();
+        const localTime=localData.exported?new Date(localData.exported).getTime():0;
+        if(remoteTime>localTime){
+          // Remote is newer — pull it in
+          importFromJson(text);
+          console.log('FitTrack: Pulled newer data from Drive');
+          showSyncIndicator('✓ Synced');
+          render();
+        }else if(localTime>remoteTime){
+          // Local is newer — push to Drive
+          await gdriveUploadBackup(null);
+          console.log('FitTrack: Pushed newer local data to Drive');
+          showSyncIndicator('✓ Synced');
+        }else{
+          showSyncIndicator('✓ Up to date');
+        }
+      }else{showSyncIndicator('✓');}
+    }else{
+      // No file on Drive yet — do initial push
+      await gdriveUploadBackup(null);
+      showSyncIndicator('✓ Initial backup');
+    }
+  }catch(e){
+    console.error('FitTrack sync error:',e);
+    showSyncIndicator('⚠ Sync failed');
+  }
+  setTimeout(hideSyncIndicator,3000);
+  // Cache file ID for beforeunload push
+  cacheGdriveFileId();
+}
+
+// Push after every data change — immediate, not debounced
+let pushTimer=null;
+let pushInFlight=false;
+let pushQueued=false;
+const origDBSet=DB.set.bind(DB);
+DB.set=function(k,v){
+  origDBSet(k,v);
+  // Don't re-push for internal gdrive keys
+  if(k==='gdriveConfig'||k==='gdriveTokenTs')return;
+  // Immediate push with dedup — 1.5s debounce to batch rapid changes (e.g. logging all meals)
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(()=>gdriveImmediatePush(),1500);
+};
+
+async function gdriveImmediatePush(){
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!gdriveToken)return;
+  if(pushInFlight){pushQueued=true;return;}
+  pushInFlight=true;
+  showSyncIndicator('Saving...');
+  const ok=await gdriveUploadBackup(null);
+  pushInFlight=false;
+  if(ok){
+    showSyncIndicator('✓ Saved');
+    setTimeout(hideSyncIndicator,2000);
+  }else{
+    showSyncIndicator('⚠ Save failed');
+    setTimeout(hideSyncIndicator,3000);
+  }
+  // If another change came in while we were pushing, push again
+  if(pushQueued){pushQueued=false;setTimeout(gdriveImmediatePush,500);}
+}
+
+// Sync indicator in header
+function showSyncIndicator(text){
+  let el=document.getElementById('syncIndicator');
+  if(!el){
+    el=document.createElement('div');
+    el.id='syncIndicator';
+    el.style.cssText='font-size:10px;color:var(--teal);text-align:center;padding:3px 0;background:var(--bg-secondary);border-bottom:1px solid rgba(45,212,191,0.1);letter-spacing:0.3px;font-weight:600';
+    const header=document.querySelector('.header');
+    header.parentNode.insertBefore(el,header.nextSibling);
+  }
+  el.textContent=text;
+  el.style.display='block';
+}
+function hideSyncIndicator(){
+  const el=document.getElementById('syncIndicator');
+  if(el)el.style.display='none';
+}
+
+// Sync on visibility change: pull when coming back, push when leaving
+document.addEventListener('visibilitychange',()=>{
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!cfg.clientId)return;
+  if(document.visibilityState==='visible'){
+    // Coming back — pull latest from Drive
+    gdriveSyncOnOpen();
+  }else{
+    // Going to background — push current state immediately
+    if(gdriveToken)gdriveImmediatePush();
+  }
+});
+
+// Push on page close — best effort via sendBeacon workaround
+window.addEventListener('beforeunload',()=>{
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!gdriveToken)return;
+  // Use keepalive fetch which survives page unload (like sendBeacon but supports headers)
+  try{
+    const content=JSON.stringify(gatherAllData(),null,2);
+    // Try to find existing file ID from cache
+    const cachedFileId=localStorage.getItem('ft_gdriveFileId');
+    if(cachedFileId){
+      fetch(`https://www.googleapis.com/upload/drive/v3/files/${cachedFileId}?uploadType=media`,{
+        method:'PATCH',
+        headers:{'Authorization':'Bearer '+gdriveToken,'Content-Type':'application/json'},
+        body:content,
+        keepalive:true
+      }).catch(()=>{});
+    }
+  }catch(e){}
+});
+
+// Cache the Drive file ID for use in beforeunload
+async function cacheGdriveFileId(){
+  if(!gdriveToken)return;
+  try{
+    const file=await gdriveFindFile();
+    if(file)localStorage.setItem('ft_gdriveFileId',file.id);
+  }catch(e){}
+}
+
+// ═══ SETTINGS ═══
+function openSettingsModal(){
+  const nutCount=DB.get('nutrition').length;
+  const workCount=DB.get('workouts').length;
+  const weightCount=DB.get('weight').length;
+  const cardioCount=DB.get('cardio').length;
+  const photoCount=DB.get('photos').length;
+  const cfg=getGdriveConfig();
+  const isConnected=cfg.enabled&&cfg.clientId&&(gdriveReady||gdriveToken);
+  const lastBackup=cfg.lastBackup?fmtDate(cfg.lastBackup.slice(0,10))+' '+new Date(cfg.lastBackup).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'Never';
+
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">Settings</div>
+
+    <div class="card" style="margin-bottom:14px;background:var(--bg-input)">
+      <div class="card-title" style="margin-bottom:8px;font-size:12px">Google Drive Backup</div>
+      <div class="gdrive-status ${isConnected?'connected':'disconnected'}">
+        <div class="gdrive-dot ${isConnected?'on':'off'}"></div>
+        <div class="gdrive-info">
+          <strong>${isConnected?'Connected':'Not connected'}</strong><br>
+          ${isConnected?'Last sync: '+lastBackup:'Auto-sync your data across all devices via Google Drive'}
+        </div>
+      </div>
+      ${isConnected?`
+        <div id="gdriveStatus" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="gdriveUploadBackup(document.getElementById('gdriveStatus'))">Push Now</button>
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="gdriveRestoreBackup(document.getElementById('gdriveStatus'))">Pull from Drive</button>
+        </div>
+        <div class="divider"></div>
+        <button class="btn btn-danger btn-sm btn-block" onclick="gdriveDisconnect()" style="font-size:11px">Disconnect Google Drive</button>
+      `:`
+        <div class="input-group" style="margin-top:8px"><label>Google OAuth Client ID</label><input type="text" id="gdriveClientId" value="${cfg.clientId||''}" placeholder="paste your Client ID here"></div>
+        <button class="btn btn-primary btn-sm btn-block" onclick="gdriveConnect()">Connect Google Drive</button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+          One-time setup required:<br>
+          1. Go to <strong>console.cloud.google.com</strong><br>
+          2. Create project → Enable <strong>Google Drive API</strong><br>
+          3. Credentials → Create <strong>OAuth Client ID</strong> (Web)<br>
+          4. Add your origin URL to Authorized JS Origins<br>
+          5. Paste the Client ID above
+        </div>
+      `}
+    </div>
+
+    <div class="card" style="margin-bottom:14px;background:var(--bg-input)">
+      <div class="card-title" style="margin-bottom:8px;font-size:12px">Stored Data</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+        Meals: <strong style="color:var(--text-primary)">${nutCount}</strong> &nbsp;
+        Workouts: <strong style="color:var(--text-primary)">${workCount}</strong> &nbsp;
+        Cardio: <strong style="color:var(--text-primary)">${cardioCount}</strong><br>
+        Weight: <strong style="color:var(--text-primary)">${weightCount}</strong> &nbsp;
+        Photos: <strong style="color:var(--text-primary)">${photoCount}</strong>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block mb-8" onclick="exportData();closeModal()">Export to File (JSON)</button>
+    <button class="btn btn-secondary btn-block mb-8" onclick="importData()">Import from File</button>
+    <div class="divider"></div>
+    <button class="btn btn-danger btn-block" onclick="clearAllData()">Delete All Data</button>
+  `;
+  showModal();
+}
+
+// ═══ INIT ═══
+updateHeader();
+if(!localStorage.getItem('ft_targets'))DB.set('targets',DEFAULT_TARGETS);
+render();
+// Init GDrive: silent auth (no popup) then sync
+setTimeout(async()=>{
+  const cfg=getGdriveConfig();
+  if(!cfg.enabled||!cfg.clientId)return;
+  // Wait for Google Identity Services to load
+  const waitForGsi=()=>new Promise(r=>{const check=()=>{if(typeof google!=='undefined'&&google.accounts)r();else setTimeout(check,200);};check();});
+  try{await waitForGsi();}catch(e){return;}
+  initGdriveClient();
+  const ok=await gdriveSilentAuth();
+  if(ok)gdriveSyncOnOpen();
+},500);
+</script>
+</body>
+</html>
